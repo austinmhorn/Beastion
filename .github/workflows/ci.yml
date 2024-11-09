@@ -1,46 +1,51 @@
-name: CI
+name: Build and Test Beastion
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    name: ${{ matrix.platform.name }} ${{ matrix.config.name }}
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false
       matrix:
-        platform:
-        - { name: Windows VS2019, os: windows-2019  }
-        - { name: Windows VS2022, os: windows-2022  }
-        - { name: Linux GCC,      os: ubuntu-latest }
-        - { name: Linux Clang,    os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
-        - { name: MacOS XCode,    os: macos-latest  }
-        config:
-        - { name: Shared, flags: -DBUILD_SHARED_LIBS=ON -DSFML_STATIC_LIBRARIES=OFF }
-        - { name: Static, flags: -DBUILD_SHARED_LIBS=OFF -DSFML_STATIC_LIBRARIES=ON }
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-    - name: Install Linux Dependencies
-      if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install libxrandr-dev libxcursor-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev
+      - name: Checkout source code
+        uses: actions/checkout@v2
 
-    - name: SFML - Checkout Code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        repository: SFML/SFML
-        ref: 2.6.x
-        path: SFML
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: '3.18.4'
 
-    - name: SFML - Configure CMake
-      shell: bash
-      run: cmake -S $GITHUB_WORKSPACE/SFML -B $GITHUB_WORKSPACE/SFML/build -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/SFML/install -DCMAKE_VERBOSE_MAKEFILE=ON ${{matrix.platform.flags}} ${{matrix.config.flags}}
+      - name: Install dependencies (SFML)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libsfml-dev
 
-    - name: SFML - Build
-      shell: bash
-      run: cmake --build $GITHUB_WORKSPACE/SFML/build --config Release --target install
+      - name: Install dependencies (SFML) on macOS
+        if: matrix.os == 'macos-latest'
+        run: brew install sfml
 
-    - name: Beastion - Build
-      shell: bash
-      run: cmake --build $GITHUB_WORKSPACE/build --config Release
+      - name: Install dependencies (SFML) on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install sfml
+          # You may need to configure SFML paths manually on Windows
+
+      - name: Create build directory
+        run: cmake -S . -B build
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
