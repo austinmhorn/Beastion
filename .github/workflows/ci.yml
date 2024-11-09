@@ -1,0 +1,51 @@
+name: Build and Test Beastion
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: '3.18.4'
+
+      - name: Install dependencies (SFML)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libsfml-dev
+
+      - name: Install dependencies (SFML) on macOS
+        if: matrix.os == 'macos-latest'
+        run: brew install sfml
+
+      - name: Install dependencies (SFML) on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install sfml
+          # You may need to configure SFML paths manually on Windows
+
+      - name: Create build directory
+        run: cmake -S . -B build
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
