@@ -56,7 +56,7 @@ jobs:
 
       - name: Configure CMake with SFML Path
         if: matrix.os == 'windows-latest'
-        run: cmake -S . -B build -DSFML_DIR="C:/SFML/SFML-2.5.1"
+        run: cmake -S . -B build -DCMAKE_PREFIX_PATH="C:/SFML/SFML-2.5.1"
         
       - name: Create build directory
         run: cmake -S . -B build
