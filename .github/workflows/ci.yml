@@ -47,10 +47,17 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: brew install sfml
 
-      - name: Install dependencies on Windows (SFML)
+      - name: Download and Install SFML on Windows
         if: matrix.os == 'windows-latest'
-        run: choco install sfml
+        run: |
+          Invoke-WebRequest -Uri https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip -OutFile sfml.zip
+          Expand-Archive -Path sfml.zip -DestinationPath C:\SFML
+          Remove-Item sfml.zip
 
+      - name: Configure CMake with SFML Path
+        if: matrix.os == 'windows-latest'
+        run: cmake -S . -B build -DSFML_DIR="C:/SFML/SFML-2.5.1"
+        
       - name: Create build directory
         run: cmake -S . -B build
 
