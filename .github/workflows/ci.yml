@@ -55,7 +55,7 @@ jobs:
         run: cmake -S . -B build
 
       - name: Build with CMake
-        run: cmake --build
+        run: cmake --build build
 
       - name: Run tests
         run: |
