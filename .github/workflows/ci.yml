@@ -20,32 +20,42 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Set up CMake
-        uses: jwlawson/actions-setup-cmake@v1
-        with:
-          cmake-version: '3.18.4'
-
-      - name: Install dependencies on Ubuntu (SFML)
+      - name: Install CMake on Ubuntu
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libsfml-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo apt-add-repository -y ppa:deadsnakes/ppa
+          sudo apt-get install -y cmake
 
-      - name: Install dependencies on macOS (SFML)
+      - name: Install CMake on macOS
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install sfml
+          brew install cmake
+
+      - name: Install CMake on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install cmake --version=3.21.0 --installarguments="'/NoPath'"
+
+      - name: Install dependencies on Ubuntu (SFML)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y libsfml-dev
+
+      - name: Install dependencies on macOS (SFML)
+        if: matrix.os == 'macos-latest'
+        run: brew install sfml
 
       - name: Install dependencies on Windows (SFML)
         if: matrix.os == 'windows-latest'
-        run: |
-          choco install sfml
-          # Additional setup for SFML paths might be required on Windows
+        run: choco install sfml
 
       - name: Create build directory
         run: cmake -S . -B build
 
       - name: Build with CMake
-        run: cmake --build build --config Release
+        run: cmake --build
 
       - name: Run tests
         run: |
